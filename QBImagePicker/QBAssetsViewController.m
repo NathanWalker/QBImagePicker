@@ -303,6 +303,17 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 
 - (void)updateCachedAssets
 {
+    CGFloat scale = 1;
+#if TARGET_OS_VISION
+        UIScene *scene = [[[[UIApplication sharedApplication] connectedScenes] allObjects] firstObject];
+        if([scene.delegate conformsToProtocol:@protocol(UIWindowSceneDelegate)]){
+            UIWindow *window = [(id <UIWindowSceneDelegate>)scene.delegate window];
+            scale = 1;
+        }
+#else
+        scale = [[UIScreen mainScreen] scale];
+#endif
+    
     BOOL isViewVisible = [self isViewLoaded] && self.view.window != nil;
     if (!isViewVisible) { return; }
     
@@ -330,7 +341,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
         NSArray *assetsToStopCaching = [self assetsAtIndexPaths:removedIndexPaths];
         
         CGSize itemSize = [(UICollectionViewFlowLayout *)self.collectionViewLayout itemSize];
-        CGSize targetSize = CGSizeScale(itemSize, [[UIScreen mainScreen] scale]);
+        CGSize targetSize = CGSizeScale(itemSize, scale);
         
         [self.imageManager startCachingImagesForAssets:assetsToStartCaching
                                             targetSize:targetSize
@@ -452,6 +463,16 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    CGFloat scale = 1;
+#if TARGET_OS_VISION
+        UIScene *scene = [[[[UIApplication sharedApplication] connectedScenes] allObjects] firstObject];
+        if([scene.delegate conformsToProtocol:@protocol(UIWindowSceneDelegate)]){
+            UIWindow *window = [(id <UIWindowSceneDelegate>)scene.delegate window];
+            scale = 1;
+        }
+#else
+        scale = [[UIScreen mainScreen] scale];
+#endif
     QBAssetCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"AssetCell" forIndexPath:indexPath];
     cell.tag = indexPath.item;
     cell.showsOverlayViewWhenSelected = self.imagePickerController.allowsMultipleSelection;
@@ -459,7 +480,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     // Image
     PHAsset *asset = self.fetchResult[indexPath.item];
     CGSize itemSize = [(UICollectionViewFlowLayout *)collectionView.collectionViewLayout itemSize];
-    CGSize targetSize = CGSizeScale(itemSize, [[UIScreen mainScreen] scale]);
+    CGSize targetSize = CGSizeScale(itemSize, scale);
     
     [self.imageManager requestImageForAsset:asset
                                  targetSize:targetSize
@@ -658,11 +679,17 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath
 {
     NSUInteger numberOfColumns;
+#if TARGET_OS_VISION
+    numberOfColumns = self.imagePickerController.numberOfColumnsInLandscape;
+#else
     if (UIInterfaceOrientationIsPortrait([[UIApplication sharedApplication] statusBarOrientation])) {
         numberOfColumns = self.imagePickerController.numberOfColumnsInPortrait;
     } else {
         numberOfColumns = self.imagePickerController.numberOfColumnsInLandscape;
     }
+#endif
+    
+    
     
     CGFloat width = (CGRectGetWidth(self.view.frame) - 2.0 * (numberOfColumns - 1)) / numberOfColumns;
     

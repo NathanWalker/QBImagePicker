@@ -274,9 +274,20 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    CGFloat scale = 1;
+#if TARGET_OS_VISION
+        UIScene *scene = [[[[UIApplication sharedApplication] connectedScenes] allObjects] firstObject];
+        if([scene.delegate conformsToProtocol:@protocol(UIWindowSceneDelegate)]){
+            UIWindow *window = [(id <UIWindowSceneDelegate>)scene.delegate window];
+            scale = 1;
+        }
+#else
+        scale = [[UIScreen mainScreen] scale];
+#endif
+    
     QBAlbumCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AlbumCell" forIndexPath:indexPath];
     cell.tag = indexPath.row;
-    cell.borderWidth = 1.0 / [[UIScreen mainScreen] scale];
+    cell.borderWidth = 1.0 / scale;
     
     // Thumbnail
     PHAssetCollection *assetCollection = self.assetCollections[indexPath.row];
@@ -301,9 +312,10 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     
     if (fetchResult.count >= 3) {
         cell.imageView3.hidden = NO;
+
         
         [imageManager requestImageForAsset:fetchResult[fetchResult.count - 3]
-                                targetSize:CGSizeScale(cell.imageView3.frame.size, [[UIScreen mainScreen] scale])
+                                targetSize:CGSizeScale(cell.imageView3.frame.size, scale)
                                contentMode:PHImageContentModeAspectFill
                                    options:nil
                              resultHandler:^(UIImage *result, NSDictionary *info) {
@@ -319,7 +331,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
         cell.imageView2.hidden = NO;
         
         [imageManager requestImageForAsset:fetchResult[fetchResult.count - 2]
-                                targetSize:CGSizeScale(cell.imageView2.frame.size, [[UIScreen mainScreen] scale])
+                                targetSize:CGSizeScale(cell.imageView2.frame.size, scale)
                                contentMode:PHImageContentModeAspectFill
                                    options:nil
                              resultHandler:^(UIImage *result, NSDictionary *info) {
@@ -333,7 +345,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     
     if (fetchResult.count >= 1) {
         [imageManager requestImageForAsset:fetchResult[fetchResult.count - 1]
-                                targetSize:CGSizeScale(cell.imageView1.frame.size, [[UIScreen mainScreen] scale])
+                                targetSize:CGSizeScale(cell.imageView1.frame.size, scale)
                                contentMode:PHImageContentModeAspectFill
                                    options:nil
                              resultHandler:^(UIImage *result, NSDictionary *info) {
